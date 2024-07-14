@@ -24,14 +24,26 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	git \
 	&& rm -rf /var/lib/apt/lists/*
 
+ENV EXT_APCU_VERSION=5.1.17
+	
+RUN docker-php-source extract \
+    # ext-apcu
+    && mkdir -p /usr/src/php/ext/apcu \
+    && curl -fsSL https://github.com/krakjoe/apcu/archive/v$EXT_APCU_VERSION.tar.gz | tar xvz -C /usr/src/php/ext/apcu --strip 1 \
+    && docker-php-ext-install apcu \
+    # cleanup
+    && docker-php-source delete
+
 RUN set -eux; \
 	install-php-extensions \
 		@composer \
-		apcu \
 		intl \
 		opcache \
 		zip \
 	;
+
+RUN curl -sS https://get.symfony.com/cli/installer | bash
+RUN mv /root/.symfony5/bin/symfony /usr/local/bin/symfony
 
 # https://getcomposer.org/doc/03-cli.md#composer-allow-superuser
 ENV COMPOSER_ALLOW_SUPERUSER=1
@@ -90,3 +102,4 @@ RUN set -eux; \
 	composer dump-env prod; \
 	composer run-script --no-dev post-install-cmd; \
 	chmod +x bin/console; sync;
+
